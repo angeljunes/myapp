@@ -1,0 +1,93 @@
+[
+  {
+    "_id": {"$oid": ""},
+    "name": "Lima",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Arequipa",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Trujillo",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Chiclayo",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Piura",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Iquitos",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Cusco",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Huancayo",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Tacna",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  },
+  {
+    "_id": {"$oid": ""},
+    "name": "Ica",
+    "createdAt": {"$date": "2024-01-01T00:00:00.000Z"},
+    "country": {
+      "$ref": "countries",
+      "$id": {"$oid": "507f1f77bcf86cd799439021"}
+    }
+  }
+]
+

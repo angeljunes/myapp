@@ -2,12 +2,13 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
 import '../models/alert.dart';
 
 class AlertsService {
   AlertsService({http.Client? client}) : _client = client ?? http.Client();
 
-  static const String baseUrl = 'http://localhost:8081/api';
+  static const String baseUrl = AppConfig.apiBaseUrl;
   final http.Client _client;
 
   Future<List<AlertModel>> fetchAlerts() async {

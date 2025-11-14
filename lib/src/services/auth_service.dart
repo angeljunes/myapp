@@ -3,13 +3,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/app_config.dart';
 import '../models/app_user.dart';
 
 class AuthService {
   AuthService({http.Client? client}) : _client = client ?? http.Client();
 
-  static const String baseUrl = 'http://localhost:8081/api';
-  static const String tokenKey = 'rcas_token';
+  static const String baseUrl = AppConfig.apiBaseUrl;
+  static const String tokenKey = AppConfig.tokenKey;
 
   final http.Client _client;
 
