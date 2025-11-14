@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
 import 'navigation/main_tab_navigator.dart';
-import 'screens/auth/login_screen.dart';
+import 'package:myapp/src/screens/auth/login_screen.dart';
 
 class RCASApp extends StatelessWidget {
   const RCASApp({super.key});

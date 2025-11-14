@@ -103,13 +103,16 @@ class _MapScreenState extends State<MapScreen> {
             width: 40,
             height: 40,
             point: alert.position,
-            builder: (_) => Tooltip(
+            child: Tooltip(
               message:
                   '${alert.title}\nPrioridad: ${alert.priority}\nEstado: ${alert.status}',
-              child: Icon(
-                Icons.location_on,
-                color: _priorityColor(alert.priority),
-                size: 36,
+              child: GestureDetector(
+                onTap: () => _showAlertDetails(alert),
+                child: Icon(
+                  Icons.location_on,
+                  color: _priorityColor(alert.priority),
+                  size: 36,
+                ),
               ),
             ),
           ),
@@ -295,18 +298,24 @@ class _MapScreenState extends State<MapScreen> {
                     if (_alerts.isEmpty) return;
                     final selected = await showModalBottomSheet<AlertModel>(
                       context: context,
-                      builder: (_) => ListView.builder(
-                        itemCount: _alerts.length,
-                        itemBuilder: (_, index) {
-                          final alert = _alerts[index];
-                          return ListTile(
-                            title: Text(alert.title),
-                            subtitle: Text(alert.address ?? alert.description),
-                            trailing: Icon(Icons.circle,
-                                color: _priorityColor(alert.priority), size: 12),
-                            onTap: () => Navigator.of(context).pop(alert),
-                          );
-                        },
+                      builder: (_) => Container(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.7,
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _alerts.length,
+                          itemBuilder: (_, index) {
+                            final alert = _alerts[index];
+                            return ListTile(
+                              title: Text(alert.title),
+                              subtitle: Text(alert.address ?? alert.description),
+                              trailing: Icon(Icons.circle,
+                                  color: _priorityColor(alert.priority), size: 12),
+                              onTap: () => Navigator.of(context).pop(alert),
+                            );
+                          },
+                        ),
                       ),
                     );
                     if (selected != null) {
