@@ -14,29 +14,32 @@ class ApiClient {
 
   final http.Client _client;
 
-  /// Normalize URL to avoid double slashes
-  /// Uses Uri.resolve to properly handle URL construction
+  /// Build URI from baseUrl and endpoint, avoiding double slashes
+  /// This method ensures proper URL construction without // issues
   Uri _buildUri(String endpoint) {
-    // Remove all trailing slashes from baseUrl
+    // Get baseUrl and ensure it's clean - remove ALL trailing slashes
     String cleanBaseUrl = baseUrl.trim();
     while (cleanBaseUrl.endsWith('/')) {
       cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
     }
     
-    // Remove all leading slashes from endpoint and trim whitespace
+    // Remove ALL leading slashes from endpoint and trim whitespace
     String cleanEndpoint = endpoint.trim();
     while (cleanEndpoint.startsWith('/')) {
       cleanEndpoint = cleanEndpoint.substring(1);
     }
     
-    // Build base URI
-    final baseUri = Uri.parse(cleanBaseUrl);
+    // Ensure endpoint is not empty
+    if (cleanEndpoint.isEmpty) {
+      return Uri.parse(cleanBaseUrl);
+    }
     
-    // Build endpoint path (ensure it starts with /)
-    final path = cleanEndpoint.isNotEmpty ? '/$cleanEndpoint' : '/';
+    // Build the complete URL string with exactly one slash between base and endpoint
+    // This guarantees: baseUrl (no trailing /) + / + endpoint (no leading /) = correct URL
+    final fullUrl = '$cleanBaseUrl/$cleanEndpoint';
     
-    // Use Uri.resolve to properly combine base and path
-    return baseUri.resolve(path);
+    // Parse and return the URI
+    return Uri.parse(fullUrl);
   }
 
   /// Get stored JWT token
