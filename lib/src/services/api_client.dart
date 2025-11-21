@@ -98,7 +98,7 @@ class ApiClient {
     }
   }
 
-  /// GET request
+  /// GET request - returns Map or handles List responses
   Future<Map<String, dynamic>> get(String endpoint, {bool requireAuth = true}) async {
     try {
       final uri = _buildUri(endpoint);
@@ -107,7 +107,38 @@ class ApiClient {
       final response = await _client.get(uri, headers: headers);
       _handleResponse(response);
       
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      final decoded = jsonDecode(response.body);
+      
+      // If backend returns a List, wrap it in a Map for consistency
+      if (decoded is List) {
+        return {'data': decoded};
+      }
+      
+      // If it's already a Map, return it
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      
+      // Fallback: wrap in a Map
+      return {'data': decoded};
+    } on SocketException {
+      throw ApiException('No hay conexión a internet');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Error de conexión: $e');
+    }
+  }
+  
+  /// GET request that returns raw response (dynamic) - for cases where response format is unknown
+  Future<dynamic> getRaw(String endpoint, {bool requireAuth = true}) async {
+    try {
+      final uri = _buildUri(endpoint);
+      final headers = await _getHeaders(includeAuth: requireAuth);
+      
+      final response = await _client.get(uri, headers: headers);
+      _handleResponse(response);
+      
+      return jsonDecode(response.body);
     } on SocketException {
       throw ApiException('No hay conexión a internet');
     } catch (e) {

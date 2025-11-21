@@ -7,23 +7,51 @@ class AlertsService {
   final ApiClient _apiClient;
 
   /// Get all alerts
+  /// Handles both List and Map responses from backend
   Future<List<AlertModel>> fetchAlerts() async {
     try {
-      final response = await _apiClient.get('/alerts');
+      // Use getRaw to handle both List and Map responses
+      final rawResponse = await _apiClient.getRaw('/alerts');
       
-      if (response['alerts'] != null) {
-        final List<dynamic> alertsData = response['alerts'] as List<dynamic>;
-        return alertsData
-            .map((json) => AlertModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-      } else if (response is List) {
-        // If response is directly a list
-        return (response as List<dynamic>)
-            .map((json) => AlertModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-      } else {
-        throw Exception('Formato de respuesta inválido');
+      List<dynamic> alertsData;
+      
+      // Case 1: Backend returns a List directly: [{...}, {...}]
+      if (rawResponse is List) {
+        alertsData = rawResponse;
       }
+      // Case 2: Backend returns a Map with 'alerts' key: {"alerts": [...]}
+      else if (rawResponse is Map<String, dynamic>) {
+        if (rawResponse['alerts'] != null && rawResponse['alerts'] is List) {
+          alertsData = rawResponse['alerts'] as List<dynamic>;
+        }
+        // Case 3: Backend returns a Map with 'data' key (from our wrapper)
+        else if (rawResponse['data'] != null && rawResponse['data'] is List) {
+          alertsData = rawResponse['data'] as List<dynamic>;
+        }
+        // Case 4: Try to find any List value in the Map
+        else {
+          final listValue = rawResponse.values.firstWhere(
+            (value) => value is List,
+            orElse: () => throw Exception('No se encontró lista de alertas en la respuesta'),
+          );
+          alertsData = listValue as List<dynamic>;
+        }
+      }
+      // Case 5: Unexpected format
+      else {
+        throw Exception('Formato de respuesta inválido: se esperaba List o Map, se recibió ${rawResponse.runtimeType}');
+      }
+      
+      // Convert List<dynamic> to List<AlertModel>
+      return alertsData
+          .map((json) {
+            if (json is Map<String, dynamic>) {
+              return AlertModel.fromJson(json);
+            } else {
+              throw Exception('Elemento de alerta inválido: se esperaba Map, se recibió ${json.runtimeType}');
+            }
+          })
+          .toList();
     } catch (e) {
       throw Exception('Error al cargar alertas: $e');
     }
