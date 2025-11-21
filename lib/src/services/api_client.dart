@@ -15,11 +15,28 @@ class ApiClient {
   final http.Client _client;
 
   /// Normalize URL to avoid double slashes
+  /// Ensures baseUrl has no trailing slash and endpoint starts with exactly one /
   String _normalizeUrl(String baseUrl, String endpoint) {
-    // Remove trailing slash from baseUrl
-    final cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
-    // Ensure endpoint starts with /
-    final cleanEndpoint = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+    // Remove all trailing slashes and whitespace from baseUrl
+    String cleanBaseUrl = baseUrl.trim();
+    while (cleanBaseUrl.endsWith('/')) {
+      cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
+    }
+    
+    // Remove all leading slashes from endpoint and trim whitespace
+    String cleanEndpoint = endpoint.trim();
+    while (cleanEndpoint.startsWith('/')) {
+      cleanEndpoint = cleanEndpoint.substring(1);
+    }
+    
+    // Ensure endpoint starts with exactly one /
+    if (cleanEndpoint.isNotEmpty) {
+      cleanEndpoint = '/$cleanEndpoint';
+    } else {
+      cleanEndpoint = '/';
+    }
+    
+    // Return properly formatted URL without double slashes
     return '$cleanBaseUrl$cleanEndpoint';
   }
 
