@@ -14,6 +14,15 @@ class ApiClient {
 
   final http.Client _client;
 
+  /// Normalize URL to avoid double slashes
+  String _normalizeUrl(String baseUrl, String endpoint) {
+    // Remove trailing slash from baseUrl
+    final cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+    // Ensure endpoint starts with /
+    final cleanEndpoint = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+    return '$cleanBaseUrl$cleanEndpoint';
+  }
+
   /// Get stored JWT token
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -73,7 +82,7 @@ class ApiClient {
   /// GET request
   Future<Map<String, dynamic>> get(String endpoint, {bool requireAuth = true}) async {
     try {
-      final uri = Uri.parse('$baseUrl$endpoint');
+      final uri = Uri.parse(_normalizeUrl(baseUrl, endpoint));
       final headers = await _getHeaders(includeAuth: requireAuth);
       
       final response = await _client.get(uri, headers: headers);
@@ -95,7 +104,7 @@ class ApiClient {
     bool requireAuth = true,
   }) async {
     try {
-      final uri = Uri.parse('$baseUrl$endpoint');
+      final uri = Uri.parse(_normalizeUrl(baseUrl, endpoint));
       final headers = await _getHeaders(includeAuth: requireAuth);
       
       final response = await _client.post(
@@ -121,7 +130,7 @@ class ApiClient {
     bool requireAuth = true,
   }) async {
     try {
-      final uri = Uri.parse('$baseUrl$endpoint');
+      final uri = Uri.parse(_normalizeUrl(baseUrl, endpoint));
       final headers = await _getHeaders(includeAuth: requireAuth);
       
       final response = await _client.put(
@@ -143,7 +152,7 @@ class ApiClient {
   /// DELETE request
   Future<Map<String, dynamic>> delete(String endpoint, {bool requireAuth = true}) async {
     try {
-      final uri = Uri.parse('$baseUrl$endpoint');
+      final uri = Uri.parse(_normalizeUrl(baseUrl, endpoint));
       final headers = await _getHeaders(includeAuth: requireAuth);
       
       final response = await _client.delete(uri, headers: headers);
