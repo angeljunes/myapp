@@ -6,7 +6,7 @@ import 'providers/alert_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/map_provider.dart';
 import 'navigation/main_tab_navigator.dart';
-import 'package:rcas_app/src/screens/auth/login_screen.dart';
+import 'screens/auth/login_screen.dart';
 
 class RCASApp extends StatelessWidget {
   const RCASApp({super.key});
