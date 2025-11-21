@@ -5,6 +5,7 @@ class AppConfig {
       'mongodb+srv://edgarangelja_db_user:M3TEIlEqdGh2eT09@cluster0.iwfms3i.mongodb.net/?appName=Cluster0';
 
   // API Base URL (sin slash final - formato GitHub Codespaces)
+  // IMPORTANTE: No debe terminar con "/"
   static const String apiBaseUrl = 'https://ominous-acorn-5vxrqwxjpxc47pj-8081.app.github.dev/api';
 
   // Database Name (si es necesario)

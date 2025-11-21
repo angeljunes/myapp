@@ -15,9 +15,9 @@ class ApiClient {
   final http.Client _client;
 
   /// Normalize URL to avoid double slashes
-  /// Ensures baseUrl has no trailing slash and endpoint starts with exactly one /
-  String _normalizeUrl(String baseUrl, String endpoint) {
-    // Remove all trailing slashes and whitespace from baseUrl
+  /// Uses Uri.resolve to properly handle URL construction
+  Uri _buildUri(String endpoint) {
+    // Remove all trailing slashes from baseUrl
     String cleanBaseUrl = baseUrl.trim();
     while (cleanBaseUrl.endsWith('/')) {
       cleanBaseUrl = cleanBaseUrl.substring(0, cleanBaseUrl.length - 1);
@@ -29,15 +29,14 @@ class ApiClient {
       cleanEndpoint = cleanEndpoint.substring(1);
     }
     
-    // Ensure endpoint starts with exactly one /
-    if (cleanEndpoint.isNotEmpty) {
-      cleanEndpoint = '/$cleanEndpoint';
-    } else {
-      cleanEndpoint = '/';
-    }
+    // Build base URI
+    final baseUri = Uri.parse(cleanBaseUrl);
     
-    // Return properly formatted URL without double slashes
-    return '$cleanBaseUrl$cleanEndpoint';
+    // Build endpoint path (ensure it starts with /)
+    final path = cleanEndpoint.isNotEmpty ? '/$cleanEndpoint' : '/';
+    
+    // Use Uri.resolve to properly combine base and path
+    return baseUri.resolve(path);
   }
 
   /// Get stored JWT token
@@ -99,7 +98,7 @@ class ApiClient {
   /// GET request
   Future<Map<String, dynamic>> get(String endpoint, {bool requireAuth = true}) async {
     try {
-      final uri = Uri.parse(_normalizeUrl(baseUrl, endpoint));
+      final uri = _buildUri(endpoint);
       final headers = await _getHeaders(includeAuth: requireAuth);
       
       final response = await _client.get(uri, headers: headers);
@@ -121,7 +120,7 @@ class ApiClient {
     bool requireAuth = true,
   }) async {
     try {
-      final uri = Uri.parse(_normalizeUrl(baseUrl, endpoint));
+      final uri = _buildUri(endpoint);
       final headers = await _getHeaders(includeAuth: requireAuth);
       
       final response = await _client.post(
@@ -147,7 +146,7 @@ class ApiClient {
     bool requireAuth = true,
   }) async {
     try {
-      final uri = Uri.parse(_normalizeUrl(baseUrl, endpoint));
+      final uri = _buildUri(endpoint);
       final headers = await _getHeaders(includeAuth: requireAuth);
       
       final response = await _client.put(
@@ -169,7 +168,7 @@ class ApiClient {
   /// DELETE request
   Future<Map<String, dynamic>> delete(String endpoint, {bool requireAuth = true}) async {
     try {
-      final uri = Uri.parse(_normalizeUrl(baseUrl, endpoint));
+      final uri = _buildUri(endpoint);
       final headers = await _getHeaders(includeAuth: requireAuth);
       
       final response = await _client.delete(uri, headers: headers);
