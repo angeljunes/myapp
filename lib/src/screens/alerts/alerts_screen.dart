@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../models/alert.dart';
-import '../../services/alerts_service.dart';
+import '../../providers/alert_provider.dart';
+import '../../providers/map_provider.dart';
+import '../../widgets/alert_tile.dart';
 
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key});
@@ -11,215 +15,133 @@ class AlertsScreen extends StatefulWidget {
 }
 
 class _AlertsScreenState extends State<AlertsScreen> {
-  final AlertsService _alertsService = AlertsService();
-
-  List<AlertModel> _alerts = [];
-  List<AlertModel> _filteredAlerts = [];
-  bool _loading = true;
-  String? _priorityFilter;
-  String? _statusFilter;
-  String? _error;
+  String _selectedFilter = 'TODAS';
+  final List<String> _filters = ['TODAS', 'ALTA', 'MEDIA', 'BAJA'];
 
   @override
   void initState() {
     super.initState();
-    _loadAlerts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AlertProvider>().loadAlerts();
+    });
   }
 
-  Future<void> _loadAlerts() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final alerts = await _alertsService.fetchAlerts();
-      setState(() {
-        _alerts = alerts;
-        _applyFilters();
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
-    } finally {
-      setState(() => _loading = false);
+  List<AlertModel> _getFilteredAlerts(List<AlertModel> alerts) {
+    if (_selectedFilter == 'TODAS') {
+      return alerts;
     }
+    return alerts.where((alert) => alert.priority == _selectedFilter).toList();
   }
 
-  void _applyFilters() {
-    final filtered = _alerts.where((alert) {
-      final matchesPriority = _priorityFilter == null
-          ? true
-          : alert.priority.toUpperCase() == _priorityFilter;
-      final matchesStatus = _statusFilter == null
-          ? true
-          : alert.status.toUpperCase() == _statusFilter;
-      return matchesPriority && matchesStatus;
-    }).toList();
-
-    setState(() {
-      _filteredAlerts = filtered;
-    });
-  }
-
-  void _onSelectPriority(String? priority) {
-    setState(() {
-      _priorityFilter = priority;
-    });
-    _applyFilters();
-  }
-
-  void _onSelectStatus(String? status) {
-    setState(() {
-      _statusFilter = status;
-    });
-    _applyFilters();
-  }
-
-  Color _priorityColor(String priority) {
+  Color _getPriorityColor(String priority) {
     switch (priority.toUpperCase()) {
       case 'ALTA':
-        return Colors.redAccent;
+        return Colors.red;
       case 'MEDIA':
-        return Colors.amber;
+        return Colors.orange;
       case 'BAJA':
         return Colors.green;
       default:
-        return Colors.blueGrey;
+        return Colors.grey;
     }
-  }
-
-  Widget _buildFilterSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Filtrar por prioridad',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: [
-            FilterChip(
-              label: const Text('Todas'),
-              selected: _priorityFilter == null,
-              onSelected: (_) => _onSelectPriority(null),
-            ),
-            FilterChip(
-              label: const Text('Alta'),
-              selected: _priorityFilter == 'ALTA',
-              onSelected: (_) => _onSelectPriority('ALTA'),
-              backgroundColor: Colors.red.withOpacity(0.1),
-            ),
-            FilterChip(
-              label: const Text('Media'),
-              selected: _priorityFilter == 'MEDIA',
-              onSelected: (_) => _onSelectPriority('MEDIA'),
-              backgroundColor: Colors.amber.withOpacity(0.1),
-            ),
-            FilterChip(
-              label: const Text('Baja'),
-              selected: _priorityFilter == 'BAJA',
-              onSelected: (_) => _onSelectPriority('BAJA'),
-              backgroundColor: Colors.green.withOpacity(0.1),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Filtrar por estado',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: [
-            FilterChip(
-              label: const Text('Todos'),
-              selected: _statusFilter == null,
-              onSelected: (_) => _onSelectStatus(null),
-            ),
-            FilterChip(
-              label: const Text('Pendiente'),
-              selected: _statusFilter == 'PENDIENTE',
-              onSelected: (_) => _onSelectStatus('PENDIENTE'),
-            ),
-            FilterChip(
-              label: const Text('Verificada'),
-              selected: _statusFilter == 'VERIFICADA',
-              onSelected: (_) => _onSelectStatus('VERIFICADA'),
-            ),
-            FilterChip(
-              label: const Text('Resuelta'),
-              selected: _statusFilter == 'RESUELTA',
-              onSelected: (_) => _onSelectStatus('RESUELTA'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAlertItem(AlertModel alert) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _priorityColor(alert.priority),
-          child: Text(alert.priority[0]),
-        ),
-        title: Text(alert.title),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(alert.description),
-            const SizedBox(height: 4),
-            Text(
-              alert.address ?? 'Lat: ${alert.position.latitude.toStringAsFixed(3)}, '
-                  'Lng: ${alert.position.longitude.toStringAsFixed(3)}',
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-            const SizedBox(height: 4),
-            Text('Estado: ${alert.status}'),
-          ],
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => _showAlertDetails(alert),
-      ),
-    );
   }
 
   void _showAlertDetails(AlertModel alert) {
     showModalBottomSheet(
       context: context,
-      builder: (_) => Padding(
+      isScrollControlled: true,
+      builder: (_) => Container(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              alert.title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    alert.title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(alert.priority),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    alert.priority,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(alert.description),
             const SizedBox(height: 12),
-            Text('Prioridad: ${alert.priority}'),
-            Text('Estado: ${alert.status}'),
+            Text(
+              alert.description,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.person, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(alert.username ?? 'Usuario desconocido'),
+                const Spacer(),
+                Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  alert.createdAt != null
+                      ? '${alert.createdAt!.day}/${alert.createdAt!.month}/${alert.createdAt!.year}'
+                      : 'Fecha desconocida',
+                ),
+              ],
+            ),
             if (alert.address != null) ...[
               const SizedBox(height: 8),
-              Text('Dirección: ${alert.address}'),
+              Row(
+                children: [
+                  Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Expanded(child: Text(alert.address!)),
+                ],
+              ),
             ],
-            const SizedBox(height: 12),
-            Text(
-              'Coordenadas: ${alert.position.latitude.toStringAsFixed(5)}, '
-              '${alert.position.longitude.toStringAsFixed(5)}',
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      // Navigate to map tab and show this alert
+                      context.read<MapProvider>().moveToLocation(
+                        LatLng(alert.latitude, alert.longitude),
+                        zoom: 18.0,
+                      );
+                      // You might want to switch to map tab here
+                    },
+                    icon: const Icon(Icons.map),
+                    label: const Text('Ver en mapa'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                    label: const Text('Cerrar'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -230,60 +152,202 @@ class _AlertsScreenState extends State<AlertsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alertas registradas'),
-        actions: [
-          IconButton(
-            onPressed: _loading ? null : _loadAlerts,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Actualizar',
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadAlerts,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildFilterSection(),
-            const SizedBox(height: 16),
-            if (_error != null)
-              Text(
-                _error!,
-                style: const TextStyle(color: Colors.redAccent),
-              ),
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 48),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_filteredAlerts.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 48),
+      body: Consumer<AlertProvider>(
+        builder: (context, alertProvider, child) {
+          final filteredAlerts = _getFilteredAlerts(alertProvider.alerts);
+
+          return Column(
+            children: [
+              // Filter chips
+              Container(
+                padding: const EdgeInsets.all(16),
                 child: Column(
-                  children: const [
-                    Icon(Icons.info_outline, size: 40, color: Colors.black38),
-                    SizedBox(height: 8),
-                    Text('No hay alertas que coincidan con los filtros.'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Filtrar por prioridad:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _filters.map((filter) {
+                          final isSelected = _selectedFilter == filter;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(filter),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() => _selectedFilter = filter);
+                                }
+                              },
+                              selectedColor: filter == 'TODAS' 
+                                  ? Colors.blue[100] 
+                                  : _getPriorityColor(filter).withOpacity(0.2),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   ],
                 ),
-              )
-            else
-              ..._filteredAlerts.map(_buildAlertItem),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Aquí puedes abrir el formulario para registrar una alerta.'),
-            ),
+              ),
+
+              // Stats card
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatItem(
+                          'Total',
+                          alertProvider.alerts.length.toString(),
+                          Colors.blue,
+                        ),
+                        _buildStatItem(
+                          'Alta',
+                          alertProvider.alerts
+                              .where((a) => a.priority == 'ALTA')
+                              .length
+                              .toString(),
+                          Colors.red,
+                        ),
+                        _buildStatItem(
+                          'Media',
+                          alertProvider.alerts
+                              .where((a) => a.priority == 'MEDIA')
+                              .length
+                              .toString(),
+                          Colors.orange,
+                        ),
+                        _buildStatItem(
+                          'Baja',
+                          alertProvider.alerts
+                              .where((a) => a.priority == 'BAJA')
+                              .length
+                              .toString(),
+                          Colors.green,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Alerts list
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: alertProvider.loadAlerts,
+                  child: alertProvider.loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : alertProvider.error != null
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 64,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Error al cargar alertas',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    alertProvider.error!,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.grey[500]),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: alertProvider.loadAlerts,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Reintentar'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : filteredAlerts.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.list_alt,
+                                        size: 64,
+                                        color: Colors.grey[400],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        _selectedFilter == 'TODAS'
+                                            ? 'No hay alertas registradas'
+                                            : 'No hay alertas de prioridad $_selectedFilter',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Las alertas aparecerán aquí cuando se registren',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  itemCount: filteredAlerts.length,
+                                  itemBuilder: (context, index) {
+                                    final alert = filteredAlerts[index];
+                                    return AlertTile(
+                                      alert: alert,
+                                      onTap: () => _showAlertDetails(alert),
+                                    );
+                                  },
+                                ),
+                ),
+              ),
+            ],
           );
         },
-        icon: const Icon(Icons.add_alert),
-        label: const Text('Registrar alerta'),
       ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }

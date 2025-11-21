@@ -1,42 +1,90 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
-import '../config/app_config.dart';
 import '../models/alert.dart';
+import 'api_client.dart';
 
 class AlertsService {
-  AlertsService({http.Client? client}) : _client = client ?? http.Client();
+  AlertsService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
-  static const String baseUrl = AppConfig.apiBaseUrl;
-  final http.Client _client;
+  final ApiClient _apiClient;
 
+  /// Get all alerts
   Future<List<AlertModel>> fetchAlerts() async {
-    final uri = Uri.parse('$baseUrl/alerts');
-    final response = await _client.get(uri);
-    if (response.statusCode != 200) {
-      throw Exception('No se pudieron cargar las alertas');
+    try {
+      final response = await _apiClient.get('/alerts');
+      
+      if (response['alerts'] != null) {
+        final List<dynamic> alertsData = response['alerts'] as List<dynamic>;
+        return alertsData
+            .map((json) => AlertModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else if (response is List) {
+        // If response is directly a list
+        return (response as List<dynamic>)
+            .map((json) => AlertModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('Formato de respuesta inválido');
+      }
+    } catch (e) {
+      throw Exception('Error al cargar alertas: $e');
     }
-
-    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-    return data
-        .map((json) => AlertModel.fromJson(json as Map<String, dynamic>))
-        .toList();
   }
 
-  Future<AlertModel> createAlert(Map<String, dynamic> payload) async {
-    final uri = Uri.parse('$baseUrl/alerts');
-    final response = await _client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(payload),
-    );
+  /// Create a new alert
+  Future<AlertModel> createAlert({
+    required String title,
+    required String description,
+    required double latitude,
+    required double longitude,
+    String priority = 'MEDIA',
+    String? address,
+  }) async {
+    try {
+      final payload = {
+        'title': title,
+        'description': description,
+        'latitude': latitude,
+        'longitude': longitude,
+        'priority': priority,
+        if (address != null) 'address': address,
+      };
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Error al registrar la alerta');
+      final response = await _apiClient.post('/alerts', payload);
+      
+      if (response['alert'] != null) {
+        return AlertModel.fromJson(response['alert'] as Map<String, dynamic>);
+      } else {
+        return AlertModel.fromJson(response);
+      }
+    } catch (e) {
+      throw Exception('Error al crear alerta: $e');
     }
+  }
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    return AlertModel.fromJson(data);
+  /// Update an existing alert
+  Future<AlertModel> updateAlert(String alertId, Map<String, dynamic> updates) async {
+    try {
+      final response = await _apiClient.put('/alerts/$alertId', updates);
+      
+      if (response['alert'] != null) {
+        return AlertModel.fromJson(response['alert'] as Map<String, dynamic>);
+      } else {
+        return AlertModel.fromJson(response);
+      }
+    } catch (e) {
+      throw Exception('Error al actualizar alerta: $e');
+    }
+  }
+
+  /// Delete an alert
+  Future<void> deleteAlert(String alertId) async {
+    try {
+      await _apiClient.delete('/alerts/$alertId');
+    } catch (e) {
+      throw Exception('Error al eliminar alerta: $e');
+    }
+  }
+
+  void dispose() {
+    _apiClient.dispose();
   }
 }
