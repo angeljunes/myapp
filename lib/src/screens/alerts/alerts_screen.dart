@@ -186,7 +186,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
                               },
                               selectedColor: filter == 'TODAS' 
                                   ? Colors.blue[100] 
-                                  : _getPriorityColor(filter).withOpacity(0.2),
+                                  : Color.alphaBlend(
+                                      _getPriorityColor(filter).withAlpha(51), // 0.2 * 255 = 51
+                                      Colors.white,
+                                    ),
                             ),
                           );
                         }).toList(),

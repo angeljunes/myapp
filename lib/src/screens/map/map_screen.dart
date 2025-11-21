@@ -17,7 +17,6 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   Set<Marker> _markers = {};
-  LatLng? _selectedLocation;
 
   @override
   void initState() {
@@ -172,10 +171,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onMapTap(LatLng location) {
-    setState(() {
-      _selectedLocation = location;
-    });
-    
     _showCreateAlertDialog(location);
   }
 
