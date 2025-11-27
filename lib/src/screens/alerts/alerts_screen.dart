@@ -187,8 +187,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
             Text(alert.description),
             const SizedBox(height: 4),
             Text(
-              alert.address ?? 'Lat: ${alert.position.latitude.toStringAsFixed(3)}, '
-                  'Lng: ${alert.position.longitude.toStringAsFixed(3)}',
+              alert.address ?? 'Lat: ${alert.latitude.toStringAsFixed(3)}, '
+                  'Lng: ${alert.longitude.toStringAsFixed(3)}',
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
             const SizedBox(height: 4),
@@ -228,8 +228,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
             ],
             const SizedBox(height: 12),
             Text(
-              'Coordenadas: ${alert.position.latitude.toStringAsFixed(5)}, '
-              '${alert.position.longitude.toStringAsFixed(5)}',
+              'Coordenadas: ${alert.latitude.toStringAsFixed(5)}, '
+              '${alert.longitude.toStringAsFixed(5)}',
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ],
