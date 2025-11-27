@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
@@ -23,11 +22,10 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
 
   Future<void> _init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(AuthService.tokenKey);
-    if (token != null) {
+    final isAuth = await _authService.isAuthenticated();
+    if (isAuth) {
       try {
-        final user = await _authService.getProfile(token);
+        final user = await _authService.getProfile();
         _currentUser = user;
         _status = AuthStatus.authenticated;
       } catch (_) {

@@ -1,43 +1,26 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../config/app_config.dart';
 import '../models/app_user.dart';
+import 'api_client.dart';
 
 class AuthService {
-  AuthService({http.Client? client}) : _client = client ?? http.Client();
+  AuthService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
-  static const String baseUrl = AppConfig.apiBaseUrl;
-  static const String tokenKey = AppConfig.tokenKey;
-
-  final http.Client _client;
+  final ApiClient _apiClient;
 
   Future<AppUser> login(String identity, String password) async {
-    final uri = Uri.parse('$baseUrl/auth/login');
-    final response = await _client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'identity': identity,
-        'password': password,
-      }),
-    );
+    try {
+      final response = await _apiClient.login(identity, password);
+      
+      if (response['user'] == null) {
+        throw Exception('Respuesta inválida del servidor');
+      }
 
-    if (response.statusCode != 200) {
-      throw Exception('Error al iniciar sesión: ${response.statusCode}');
+      return AppUser.fromJson(response['user'] as Map<String, dynamic>);
+    } catch (e) {
+      if (e.toString().contains('401')) {
+        throw Exception('Credenciales inválidas');
+      }
+      throw Exception('Error al iniciar sesión: $e');
     }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    if (data['success'] != true || data['user'] == null) {
-      throw Exception(data['error'] ?? 'Credenciales inválidas');
-    }
-
-    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(tokenKey, user.id);
-    return user;
   }
 
   Future<AppUser> register({
@@ -48,56 +31,54 @@ class AuthService {
     required String role,
     required String zone,
   }) async {
-    final uri = Uri.parse('$baseUrl/auth/register');
-    final response = await _client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    try {
+      final response = await _apiClient.post('/auth/register', {
         'email': email,
         'username': username,
         'password': password,
         'fullName': fullName,
         'role': role,
         'zone': zone,
-      }),
-    );
+      }, requireAuth: false);
 
-    if (response.statusCode != 200) {
-      throw Exception('Error al registrarse: ${response.statusCode}');
+      if (response['user'] != null) {
+        return AppUser.fromJson(response['user'] as Map<String, dynamic>);
+      } else if (response['userId'] != null) {
+        // If backend returns userId instead of user object
+        return AppUser(
+          id: response['userId'].toString(),
+          fullName: fullName,
+          email: email,
+          username: username,
+          role: role,
+          zone: zone,
+        );
+      } else {
+        throw Exception('Respuesta inválida del servidor');
+      }
+    } catch (e) {
+      throw Exception('Error al registrarse: $e');
     }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    if (data['success'] != true || data['userId'] == null) {
-      throw Exception(data['error'] ?? 'No se pudo registrar');
-    }
-
-    final user = AppUser(
-      id: data['userId'].toString(),
-      fullName: fullName,
-      email: email,
-      username: username,
-      role: role,
-      zone: zone,
-    );
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(tokenKey, user.id);
-    return user;
   }
 
-  Future<AppUser> getProfile(String token) async {
-    final uri = Uri.parse('$baseUrl/auth/user/$token');
-    final response = await _client.get(uri);
-    if (response.statusCode != 200) {
-      throw Exception('No se pudo obtener el perfil');
+  Future<AppUser> getProfile() async {
+    try {
+      final response = await _apiClient.get('/auth/profile');
+      return AppUser.fromJson(response);
+    } catch (e) {
+      throw Exception('No se pudo obtener el perfil: $e');
     }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    return AppUser.fromJson(data);
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(tokenKey);
+    await _apiClient.logout();
+  }
+
+  Future<bool> isAuthenticated() async {
+    return await _apiClient.isAuthenticated();
+  }
+
+  void dispose() {
+    _apiClient.dispose();
   }
 }

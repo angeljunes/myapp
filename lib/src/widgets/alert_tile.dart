@@ -15,20 +15,20 @@ class AlertTile extends StatelessWidget {
   Color get _priorityColor {
     switch (alert.priority.toUpperCase()) {
       case 'ALTA':
-        return Colors.redAccent;
+        return Colors.red;
       case 'MEDIA':
-        return Colors.amber;
+        return Colors.orange;
       case 'BAJA':
         return Colors.green;
       default:
-        return Colors.blueGrey;
+        return Colors.grey;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: _priorityColor,
@@ -37,22 +37,84 @@ class AlertTile extends StatelessWidget {
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
-        title: Text(alert.title),
+        title: Text(
+          alert.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(alert.description),
-            const SizedBox(height: 4),
             Text(
-              alert.address ??
-                  'Lat: ${alert.position.latitude.toStringAsFixed(3)}, Lng: ${alert.position.longitude.toStringAsFixed(3)}',
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              alert.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            Text('Estado: ${alert.status}'),
+            Row(
+              children: [
+                Icon(Icons.person, size: 12, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    alert.username ?? 'Usuario desconocido',
+                    style: const TextStyle(fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (alert.createdAt != null) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.access_time, size: 12, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${alert.createdAt!.day}/${alert.createdAt!.month}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+            if (alert.address != null) ...[
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Icon(Icons.location_on, size: 12, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      alert.address!,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: _priorityColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                alert.priority,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Icon(Icons.chevron_right, size: 16),
+          ],
+        ),
         onTap: onTap,
       ),
     );

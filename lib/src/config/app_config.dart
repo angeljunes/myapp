@@ -4,8 +4,9 @@ class AppConfig {
   static const String mongodbConnectionString =
       'mongodb+srv://edgarangelja_db_user:M3TEIlEqdGh2eT09@cluster0.iwfms3i.mongodb.net/?appName=Cluster0';
 
-  // API Base URL
-  static const String apiBaseUrl = 'http://localhost:8081/api';
+  // API Base URL (sin slash final - formato GitHub Codespaces)
+  // IMPORTANTE: No debe terminar con "/"
+  static const String apiBaseUrl = 'https://ominous-acorn-5vxrqwxjpxc47pj-8081.app.github.dev/api';
 
   // Database Name (si es necesario)
   static const String databaseName = 'rcas_db';

@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (!mounted) return;
     if (!success) {
-      final message = auth.error ?? 'No se pudo iniciar sesión';
+      final message = auth.error ?? 'No se pudo iniciar sesiÃ³n';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const Text(
-                          'Iniciar sesión',
+                          'Iniciar sesiÃ³n',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -130,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _passwordController,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
-                            labelText: 'Contraseña',
+                            labelText: 'ContraseÃ±a',
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Ingrese su contraseña';
+                              return 'Ingrese su contraseÃ±a';
                             }
                             return null;
                           },
@@ -195,13 +195,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         OutlinedButton.icon(
                           onPressed: () {},
                           icon: const Icon(Icons.g_mobiledata),
-                          label: const Text('Iniciar sesión con Google'),
+                          label: const Text('Iniciar sesiï¿½n con Google'),
                         ),
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
                           onPressed: () {},
                           icon: const Icon(Icons.facebook),
-                          label: const Text('Iniciar sesión con Facebook'),
+                          label: const Text('Iniciar sesiï¿½n con Facebook'),
                         ),
                       ],
                     ),

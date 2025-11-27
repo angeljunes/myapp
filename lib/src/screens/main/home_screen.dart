@@ -33,16 +33,16 @@ class HomeScreen extends StatelessWidget {
             style: theme.textTheme.bodyMedium?.copyWith(color: Colors.black54),
           ),
           const SizedBox(height: 24),
-          Row(
-            children: const [
+          const Row(
+            children: [
               Expanded(child: _SummaryCard(label: 'Alertas activas', value: '—', icon: Icons.warning_amber_rounded)),
               SizedBox(width: 12),
               Expanded(child: _SummaryCard(label: 'Alertas resueltas', value: '—', icon: Icons.verified_rounded)),
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: const [
+          const Row(
+            children: [
               Expanded(child: _SummaryCard(label: 'Pendientes', value: '—', icon: Icons.pending_actions)),
               SizedBox(width: 12),
               Expanded(child: _SummaryCard(label: 'Última sincronización', value: 'Ahora', icon: Icons.sync)),
