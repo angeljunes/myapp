@@ -35,7 +35,8 @@ class MapProvider extends ChangeNotifier {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        _locationError = 'Los servicios de ubicación están deshabilitados';
+        _locationError = 'Servicios de ubicación deshabilitados. El mapa funcionará con ubicación predeterminada.';
+        _locationPermissionGranted = false;
         notifyListeners();
         return;
       }
@@ -44,14 +45,16 @@ class MapProvider extends ChangeNotifier {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          _locationError = 'Permisos de ubicación denegados';
+          _locationError = 'Permisos denegados. Puedes usar el mapa pero no tu ubicación actual.';
+          _locationPermissionGranted = false;
           notifyListeners();
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        _locationError = 'Permisos de ubicación denegados permanentemente';
+        _locationError = 'Para usar tu ubicación, habilita los permisos en Configuración > Aplicaciones > Permisos';
+        _locationPermissionGranted = false;
         notifyListeners();
         return;
       }
@@ -60,7 +63,8 @@ class MapProvider extends ChangeNotifier {
       _locationError = null;
       notifyListeners();
     } catch (e) {
-      _locationError = 'Error al verificar permisos: $e';
+      _locationError = 'El mapa funcionará sin tu ubicación actual';
+      _locationPermissionGranted = false;
       notifyListeners();
     }
   }
