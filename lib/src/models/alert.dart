@@ -9,6 +9,7 @@ class AlertModel {
     required this.status,
     required this.position,
     this.address,
+    this.zone,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class AlertModel {
   final String status;
   final LatLng position;
   final String? address;
+  final String? zone;
 
   factory AlertModel.fromJson(Map<String, dynamic> json) {
     final lat = (json['latitude'] as num?)?.toDouble() ??
@@ -34,6 +36,7 @@ class AlertModel {
       status: json['status'] ?? 'PENDIENTE',
       position: LatLng(lat, lng),
       address: json['address'] ?? json['direccion'],
+      zone: json['zone'],
     );
   }
 }

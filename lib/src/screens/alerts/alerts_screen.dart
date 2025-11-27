@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/alert.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/alerts_service.dart';
 
 class AlertsScreen extends StatefulWidget {
@@ -32,7 +34,16 @@ class _AlertsScreenState extends State<AlertsScreen> {
       _error = null;
     });
     try {
-      final alerts = await _alertsService.fetchAlerts();
+      // Obtener el usuario actual del AuthProvider
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final user = authProvider.currentUser;
+
+      if (user == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Usar el endpoint filtrado por rol
+      final alerts = await _alertsService.fetchAlertsByUser(user.id);
       setState(() {
         _alerts = alerts;
         _applyFilters();
