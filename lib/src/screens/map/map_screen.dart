@@ -175,13 +175,41 @@ class _MapScreenState extends State<MapScreen> {
   void _onEmergencyPressed() async {
     final mapProvider = context.read<MapProvider>();
     
-    // Intentar obtener ubicación actual
-    if (!mapProvider.locationPermissionGranted) {
-      await mapProvider.getCurrentLocation();
+    // Mostrar indicador de carga
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text('Obteniendo ubicación...'),
+            ],
+          ),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
     
-    // Si no hay permisos, usar la posición actual del mapa (centro visible)
+    // Intentar obtener ubicación GPS actual
+    await mapProvider.getCurrentLocation();
+    
+    // Usar la ubicación obtenida (GPS si hay permisos, o centro del mapa si no)
     final location = mapProvider.currentPosition;
+    
+    // Mover el mapa a la ubicación con animación
+    await mapProvider.moveToLocation(location, zoom: 18.0);
+    
+    // Esperar un momento para que el usuario vea el movimiento
+    await Future.delayed(const Duration(milliseconds: 500));
     
     // Get address from coordinates
     String? address;
@@ -205,9 +233,10 @@ class _MapScreenState extends State<MapScreen> {
       final authProvider = context.read<AuthProvider>();
       final userId = authProvider.currentUser?.id;
       
+      // Crear la alerta automáticamente
       final success = await alertProvider.createAlert(
         title: 'EMERGENCIA',
-        description: 'Alerta de emergencia creada desde el mapa',
+        description: 'Alerta de emergencia creada automáticamente',
         latitude: location.latitude,
         longitude: location.longitude,
         priority: 'ALTA',
@@ -217,9 +246,31 @@ class _MapScreenState extends State<MapScreen> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Alerta de emergencia creada exitosamente'),
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '¡Emergencia reportada!',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Ubicación: ${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
           ),
         );
       } else {
