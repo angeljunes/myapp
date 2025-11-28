@@ -5,6 +5,7 @@ import 'package:geocoding/geocoding.dart';
 
 import '../../models/alert.dart';
 import '../../providers/alert_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/map_provider.dart';
 import '../../widgets/create_alert_dialog.dart';
 
@@ -187,20 +188,12 @@ class _MapScreenState extends State<MapScreen> {
   void _onEmergencyPressed() async {
     final mapProvider = context.read<MapProvider>();
     
+    // Intentar obtener ubicación actual
     if (!mapProvider.locationPermissionGranted) {
       await mapProvider.getCurrentLocation();
-      if (!mapProvider.locationPermissionGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Se requieren permisos de ubicación para crear una alerta de emergencia'),
-            ),
-          );
-        }
-        return;
-      }
     }
-
+    
+    // Si no hay permisos, usar la posición actual del mapa (centro visible)
     final location = mapProvider.currentPosition;
     
     // Get address from coordinates
@@ -220,13 +213,19 @@ class _MapScreenState extends State<MapScreen> {
 
     if (mounted) {
       final alertProvider = context.read<AlertProvider>();
+      
+      // Obtener el usuario actual para incluir su ID
+      final authProvider = context.read<AuthProvider>();
+      final userId = authProvider.currentUser?.id;
+      
       final success = await alertProvider.createAlert(
         title: 'EMERGENCIA',
-        description: 'Alerta de emergencia creada automáticamente desde la ubicación actual',
+        description: 'Alerta de emergencia creada desde el mapa',
         latitude: location.latitude,
         longitude: location.longitude,
         priority: 'ALTA',
         address: address,
+        userId: userId,
       );
 
       if (success) {

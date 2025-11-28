@@ -20,10 +20,9 @@ class MapProvider extends ChangeNotifier {
   String? get locationError => _locationError;
 
   Future<void> _init() async {
-    await _checkLocationPermission();
-    if (_locationPermissionGranted) {
-      await getCurrentLocation();
-    }
+    // No pedir permisos automáticamente
+    // El mapa se mostrará con ubicación predeterminada (Lima)
+    // Los permisos solo se pedirán cuando el usuario presione "Mi ubicación" o "Emergencia"
   }
 
   void setMapController(GoogleMapController controller) {
