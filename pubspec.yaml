@@ -40,7 +40,9 @@ dependencies:
   http: ^1.2.2
   shared_preferences: ^2.2.3
 
-  google_maps_flutter: ^2.5.0
+  # Map packages (OpenStreetMap - no API key required)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   geolocator: ^10.1.0
   geocoding: ^2.1.0
   permission_handler: ^11.0.1

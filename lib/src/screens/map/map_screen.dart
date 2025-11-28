@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:geocoding/geocoding.dart';
 
@@ -17,8 +18,6 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  Set<Marker> _markers = {};
-
   @override
   void initState() {
     super.initState();
@@ -40,34 +39,22 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  void _updateMarkers(List<AlertModel> alerts) {
-    _markers = alerts.map((alert) {
+  List<Marker> _buildMarkers(List<AlertModel> alerts) {
+    return alerts.map((alert) {
       return Marker(
-        markerId: MarkerId(alert.id),
-        position: LatLng(alert.latitude, alert.longitude),
-        infoWindow: InfoWindow(
-          title: alert.title,
-          snippet: '${alert.priority} - ${alert.status}',
+        point: LatLng(alert.latitude, alert.longitude),
+        width: 40,
+        height: 40,
+        child: GestureDetector(
           onTap: () => _showAlertDetails(alert),
-        ),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          _getMarkerHue(alert.priority),
+          child: Icon(
+            Icons.location_on,
+            color: _priorityColor(alert.priority),
+            size: 40,
+          ),
         ),
       );
-    }).toSet();
-  }
-
-  double _getMarkerHue(String priority) {
-    switch (priority.toUpperCase()) {
-      case 'ALTA':
-        return BitmapDescriptor.hueRed;
-      case 'MEDIA':
-        return BitmapDescriptor.hueOrange;
-      case 'BAJA':
-        return BitmapDescriptor.hueGreen;
-      default:
-        return BitmapDescriptor.hueBlue;
-    }
+    }).toList();
   }
 
   void _showAlertDetails(AlertModel alert) {
@@ -171,7 +158,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _onMapTap(LatLng location) {
+  void _onMapTap(TapPosition tapPosition, LatLng location) {
     _showCreateAlertDialog(location);
   }
 
@@ -251,24 +238,26 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       body: Consumer2<AlertProvider, MapProvider>(
         builder: (context, alertProvider, mapProvider, child) {
-          _updateMarkers(alertProvider.alerts);
+          final markers = _buildMarkers(alertProvider.alerts);
 
           return Stack(
             children: [
-              GoogleMap(
-                onMapCreated: (GoogleMapController controller) {
-                  mapProvider.setMapController(controller);
-                },
-                initialCameraPosition: CameraPosition(
-                  target: mapProvider.currentPosition,
-                  zoom: 13.0,
+              FlutterMap(
+                mapController: mapProvider.mapController,
+                options: MapOptions(
+                  initialCenter: mapProvider.currentPosition,
+                  initialZoom: 13.0,
+                  onTap: _onMapTap,
                 ),
-                markers: _markers,
-                onTap: _onMapTap,
-                myLocationEnabled: mapProvider.locationPermissionGranted,
-                myLocationButtonEnabled: false,
-                zoomControlsEnabled: false,
-                mapToolbarEnabled: false,
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.rcas.app',
+                  ),
+                  MarkerLayer(
+                    markers: markers,
+                  ),
+                ],
               ),
               
               // Top info card

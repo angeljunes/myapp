@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_map/flutter_map.dart';
 
 class MapProvider extends ChangeNotifier {
   MapProvider() {
     _init();
   }
 
-  GoogleMapController? _mapController;
+  MapController? _mapController;
   LatLng _currentPosition = const LatLng(-12.0464, -77.0428); // Lima por defecto
   bool _locationLoading = false;
   bool _locationPermissionGranted = false;
   String? _locationError;
 
-  GoogleMapController? get mapController => _mapController;
+  MapController? get mapController => _mapController;
   LatLng get currentPosition => _currentPosition;
   bool get locationLoading => _locationLoading;
   bool get locationPermissionGranted => _locationPermissionGranted;
@@ -23,9 +24,10 @@ class MapProvider extends ChangeNotifier {
     // No pedir permisos automáticamente
     // El mapa se mostrará con ubicación predeterminada (Lima)
     // Los permisos solo se pedirán cuando el usuario presione "Mi ubicación" o "Emergencia"
+    _mapController = MapController();
   }
 
-  void setMapController(GoogleMapController controller) {
+  void setMapController(MapController controller) {
     _mapController = controller;
     notifyListeners();
   }
@@ -87,9 +89,7 @@ class MapProvider extends ChangeNotifier {
       
       // Move map to current location if controller is available
       if (_mapController != null) {
-        await _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(_currentPosition, 15.0),
-        );
+        _mapController!.move(_currentPosition, 15.0);
       }
     } catch (e) {
       _locationError = 'Error al obtener ubicación: $e';
@@ -101,9 +101,7 @@ class MapProvider extends ChangeNotifier {
 
   Future<void> moveToLocation(LatLng location, {double zoom = 15.0}) async {
     if (_mapController != null) {
-      await _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(location, zoom),
-      );
+      _mapController!.move(location, zoom);
     }
   }
 
