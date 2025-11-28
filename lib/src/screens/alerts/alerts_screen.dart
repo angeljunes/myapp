@@ -188,6 +188,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
   void _showAlertDetails(AlertModel alert) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAdmin = authProvider.currentUser?.role == 'ADMIN';
+    
+    // Debug: Verificar rol del usuario
+    print('DEBUG: Usuario role = ${authProvider.currentUser?.role}');
+    print('DEBUG: isAdmin = $isAdmin');
 
     showModalBottomSheet(
       context: context,
