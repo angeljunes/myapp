@@ -5,6 +5,8 @@ import '../../models/alert.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/alerts_service.dart';
+import '../../widgets/create_alert_dialog.dart';
+import '../../providers/map_provider.dart';
 
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key});
@@ -391,6 +393,92 @@ class _AlertsScreenState extends State<AlertsScreen> {
     );
   }
 
+
+
+  Future<void> _registerAlert() async {
+    // Mostrar indicador de carga
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            SizedBox(width: 12),
+            Text('Obteniendo tu ubicación...'),
+          ],
+        ),
+        duration: Duration(seconds: 20), // Duración larga mientras carga
+      ),
+    );
+
+    try {
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      
+      // Intentar obtener ubicación actual
+      await mapProvider.getCurrentLocation();
+      
+      // Ocultar SnackBar de carga
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+
+      if (mapProvider.locationError != null && !mapProvider.locationPermissionGranted) {
+        // Si hay error de permisos, mostrar diálogo explicativo
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Ubicación necesaria'),
+              content: Text(mapProvider.locationError ?? 'Se requiere permiso de ubicación para registrar una alerta.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Intentar de nuevo
+                    _registerAlert();
+                  },
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      // Mostrar diálogo de creación con la ubicación obtenida
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => CreateAlertDialog(
+            latitude: mapProvider.currentPosition.latitude,
+            longitude: mapProvider.currentPosition.longitude,
+          ),
+        ).then((_) {
+          // Recargar alertas al cerrar el diálogo (por si se creó una)
+          _loadAlerts();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al obtener ubicación: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AlertProvider>(
@@ -449,13 +537,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Aquí puedes abrir el formulario para registrar una alerta.'),
-                ),
-              );
-            },
+            onPressed: _registerAlert,
             icon: const Icon(Icons.add_alert),
             label: const Text('Registrar alerta'),
           ),
