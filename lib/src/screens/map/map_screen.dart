@@ -194,7 +194,10 @@ class _MapScreenState extends State<MapScreen> {
             onPressed: () async {
               Navigator.pop(context);
               final alertProvider = context.read<AlertProvider>();
-              final success = await alertProvider.deleteAlert(alert.id);
+              final authProvider = context.read<AuthProvider>();
+              final userId = authProvider.currentUser?.id ?? '';
+              
+              final success = await alertProvider.deleteAlert(alert.id, userId);
               
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

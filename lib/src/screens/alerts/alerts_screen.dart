@@ -312,8 +312,12 @@ class _AlertsScreenState extends State<AlertsScreen> {
             onPressed: () async {
               Navigator.pop(context);
               final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final userId = authProvider.currentUser?.id ?? '';
+              
               final success = await alertProvider.updateAlert(
                 alert.id,
+                userId,
                 {'status': statusController.text},
               );
               
@@ -355,7 +359,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
             onPressed: () async {
               Navigator.pop(context);
               final alertProvider = Provider.of<AlertProvider>(context, listen: false);
-              final success = await alertProvider.deleteAlert(alert.id);
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final userId = authProvider.currentUser?.id ?? '';
+              
+              final success = await alertProvider.deleteAlert(alert.id, userId);
               
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

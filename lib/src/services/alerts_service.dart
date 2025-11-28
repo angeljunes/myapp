@@ -131,10 +131,17 @@ class AlertsService {
     }
   }
 
-  /// Update an existing alert
-  Future<AlertModel> updateAlert(String alertId, Map<String, dynamic> updates) async {
+  /// Update an existing alert (Admin only)
+  Future<AlertModel> updateAlert(
+    String alertId,
+    String userId,
+    Map<String, dynamic> updates,
+  ) async {
     try {
-      final response = await _apiClient.put('/alerts/$alertId', updates);
+      final response = await _apiClient.put(
+        '/alerts/$alertId?userId=$userId',
+        updates,
+      );
       
       if (response['alert'] != null) {
         return AlertModel.fromJson(response['alert'] as Map<String, dynamic>);
@@ -146,10 +153,10 @@ class AlertsService {
     }
   }
 
-  /// Delete an alert
-  Future<void> deleteAlert(String alertId) async {
+  /// Delete an alert (Admin only)
+  Future<void> deleteAlert(String alertId, String userId) async {
     try {
-      await _apiClient.delete('/alerts/$alertId');
+      await _apiClient.delete('/alerts/$alertId?userId=$userId');
     } catch (e) {
       throw Exception('Error al eliminar alerta: $e');
     }

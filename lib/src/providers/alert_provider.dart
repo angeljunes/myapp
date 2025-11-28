@@ -93,9 +93,17 @@ class AlertProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateAlert(String alertId, Map<String, dynamic> updates) async {
+  Future<bool> updateAlert(
+    String alertId,
+    String userId,
+    Map<String, dynamic> updates,
+  ) async {
     try {
-      final updatedAlert = await _alertsService.updateAlert(alertId, updates);
+      final updatedAlert = await _alertsService.updateAlert(
+        alertId,
+        userId,
+        updates,
+      );
       
       final index = _alerts.indexWhere((alert) => alert.id == alertId);
       if (index != -1) {
@@ -110,9 +118,9 @@ class AlertProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> deleteAlert(String alertId) async {
+  Future<bool> deleteAlert(String alertId, String userId) async {
     try {
-      await _alertsService.deleteAlert(alertId);
+      await _alertsService.deleteAlert(alertId, userId);
       
       _alerts.removeWhere((alert) => alert.id == alertId);
       notifyListeners();
