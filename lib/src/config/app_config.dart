@@ -6,7 +6,7 @@ class AppConfig {
 
   // API Base URL (sin slash final - formato GitHub Codespaces)
   // IMPORTANTE: No debe terminar con "/"
-  static const String apiBaseUrl = 'https://ominous-acorn-5vxrqwxjpxc47pj-8081.app.github.dev/api';
+  static const String apiBaseUrl = 'https://verbose-waddle-4jwx57wqj7qq3jp77-8081.app.github.dev/api';
 
   // Database Name (si es necesario)
   static const String databaseName = 'rcas_db';
