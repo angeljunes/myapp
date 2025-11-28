@@ -14,52 +14,33 @@ class AlertsScreen extends StatefulWidget {
 }
 
 class _AlertsScreenState extends State<AlertsScreen> {
-  final AlertsService _alertsService = AlertsService();
-
-  List<AlertModel> _alerts = [];
   List<AlertModel> _filteredAlerts = [];
-  bool _loading = true;
   String? _priorityFilter;
   String? _statusFilter;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadAlerts();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAlerts();
+    });
   }
 
   Future<void> _loadAlerts() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      // Obtener el usuario actual del AuthProvider
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final user = authProvider.currentUser;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+    final user = authProvider.currentUser;
 
-      if (user == null) {
-        throw Exception('Usuario no autenticado');
-      }
-
-      // Usar el endpoint filtrado por rol
-      final alerts = await _alertsService.fetchAlertsByUser(user.id);
-      setState(() {
-        _alerts = alerts;
-        _applyFilters();
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
-    } finally {
-      setState(() => _loading = false);
+    if (user == null) {
+      return;
     }
+
+    // Usar el endpoint filtrado por rol
+    await alertProvider.loadAlertsByUser(user.id);
   }
 
-  void _applyFilters() {
-    final filtered = _alerts.where((alert) {
+  void _applyFilters(List<AlertModel> alerts) {
+    final filtered = alerts.where((alert) {
       final matchesPriority = _priorityFilter == null
           ? true
           : alert.priority.toUpperCase() == _priorityFilter;
@@ -78,14 +59,16 @@ class _AlertsScreenState extends State<AlertsScreen> {
     setState(() {
       _priorityFilter = priority;
     });
-    _applyFilters();
+    final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+    _applyFilters(alertProvider.alerts);
   }
 
   void _onSelectStatus(String? status) {
     setState(() {
       _statusFilter = status;
     });
-    _applyFilters();
+    final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+    _applyFilters(alertProvider.alerts);
   }
 
   Color _priorityColor(String priority) {
@@ -399,61 +382,74 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alertas registradas'),
-        actions: [
-          IconButton(
-            onPressed: _loading ? null : _loadAlerts,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Actualizar',
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadAlerts,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildFilterSection(),
-            const SizedBox(height: 16),
-            if (_error != null)
-              Text(
-                _error!,
-                style: const TextStyle(color: Colors.redAccent),
+    return Consumer<AlertProvider>(
+      builder: (context, alertProvider, child) {
+        // Apply filters whenever alerts change
+        if (_filteredAlerts.isEmpty || _priorityFilter != null || _statusFilter != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _applyFilters(alertProvider.alerts);
+          });
+        } else {
+          _filteredAlerts = alertProvider.alerts;
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Alertas registradas'),
+            actions: [
+              IconButton(
+                onPressed: alertProvider.loading ? null : _loadAlerts,
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Actualizar',
               ),
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 48),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_filteredAlerts.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 48),
-                child: Column(
-                  children: const [
-                    Icon(Icons.info_outline, size: 40, color: Colors.black38),
-                    SizedBox(height: 8),
-                    Text('No hay alertas que coincidan con los filtros.'),
-                  ],
-                ),
-              )
-            else
-              ..._filteredAlerts.map(_buildAlertItem),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Aquí puedes abrir el formulario para registrar una alerta.'),
+            ],
+          ),
+          body: RefreshIndicator(
+            onRefresh: _loadAlerts,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildFilterSection(),
+                const SizedBox(height: 16),
+                if (alertProvider.error != null)
+                  Text(
+                    alertProvider.error!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                if (alertProvider.loading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (_filteredAlerts.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Column(
+                      children: [
+                        Icon(Icons.info_outline, size: 40, color: Colors.black38),
+                        SizedBox(height: 8),
+                        Text('No hay alertas que coincidan con los filtros.'),
+                      ],
+                    ),
+                  )
+                else
+                  ..._filteredAlerts.map(_buildAlertItem),
+              ],
             ),
-          );
-        },
-        icon: const Icon(Icons.add_alert),
-        label: const Text('Registrar alerta'),
-      ),
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Aquí puedes abrir el formulario para registrar una alerta.'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add_alert),
+            label: const Text('Registrar alerta'),
+          ),
+        );
+      },
     );
   }
 }
