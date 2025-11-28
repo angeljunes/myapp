@@ -44,13 +44,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    // Mapear el rol seleccionado al valor del backend
+    String backendRole;
+    switch (_selectedRole) {
+      case 'Administrador':
+        backendRole = 'ADMIN';
+        break;
+      case 'Operador':
+        backendRole = 'USER'; // Operador también es USER
+        break;
+      default:
+        backendRole = 'USER';
+    }
+
     final auth = context.read<AuthProvider>();
     final success = await auth.register(
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text,
-      role: _selectedRole,
+      role: backendRole, // Usar el rol mapeado
       zone: _zoneController.text.trim(),
     );
     
