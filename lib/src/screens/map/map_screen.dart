@@ -58,6 +58,9 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _showAlertDetails(AlertModel alert) {
+    final authProvider = context.read<AuthProvider>();
+    final isAdmin = authProvider.currentUser?.role == 'ADMIN';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -152,8 +155,67 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ],
             ),
+            // Admin delete button
+            if (isAdmin) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _confirmDeleteAlertFromMap(alert);
+                  },
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Eliminar Alerta (Admin)'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  void _confirmDeleteAlertFromMap(AlertModel alert) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirmar Eliminación'),
+        content: Text('¿Eliminar la alerta "${alert.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final alertProvider = context.read<AlertProvider>();
+              final success = await alertProvider.deleteAlert(alert.id);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success
+                          ? 'Alerta eliminada'
+                          : 'Error: ${alertProvider.error}',
+                    ),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
       ),
     );
   }

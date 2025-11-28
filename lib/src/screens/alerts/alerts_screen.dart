@@ -202,6 +202,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
   }
 
   void _showAlertDetails(AlertModel alert) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isAdmin = authProvider.currentUser?.role == 'ADMIN';
+
     showModalBottomSheet(
       context: context,
       builder: (_) => Padding(
@@ -232,8 +235,163 @@ class _AlertsScreenState extends State<AlertsScreen> {
               '${alert.longitude.toStringAsFixed(5)}',
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
+            // Admin actions
+            if (isAdmin) ...[
+              const Divider(height: 24),
+              const Text(
+                'Acciones de Administrador',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showEditAlertDialog(alert);
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Editar'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.blue,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _confirmDeleteAlert(alert);
+                      },
+                      icon: const Icon(Icons.delete),
+                      label: const Text('Eliminar'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditAlertDialog(AlertModel alert) {
+    final statusController = TextEditingController(text: alert.status);
+    
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Actualizar Estado'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Alerta: ${alert.title}'),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: alert.status,
+              decoration: const InputDecoration(
+                labelText: 'Estado',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'PENDIENTE', child: Text('Pendiente')),
+                DropdownMenuItem(value: 'VERIFICADA', child: Text('Verificada')),
+                DropdownMenuItem(value: 'RESUELTA', child: Text('Resuelta')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  statusController.text = value;
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+              final success = await alertProvider.updateAlert(
+                alert.id,
+                {'status': statusController.text},
+              );
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success
+                          ? 'Alerta actualizada correctamente'
+                          : 'Error al actualizar: ${alertProvider.error}',
+                    ),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+                if (success) {
+                  _loadAlerts();
+                }
+              }
+            },
+            child: const Text('Actualizar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteAlert(AlertModel alert) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirmar Eliminación'),
+        content: Text('¿Estás seguro de eliminar la alerta "${alert.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+              final success = await alertProvider.deleteAlert(alert.id);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success
+                          ? 'Alerta eliminada correctamente'
+                          : 'Error al eliminar: ${alertProvider.error}',
+                    ),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+                if (success) {
+                  _loadAlerts();
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
       ),
     );
   }
