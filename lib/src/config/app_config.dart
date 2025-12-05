@@ -6,7 +6,8 @@ class AppConfig {
 
   // API Base URL (sin slash final - formato GitHub Codespaces)
   // IMPORTANTE: No debe terminar con "/"
-  static const String apiBaseUrl = 'https://verbose-waddle-4jwx57wqj7qq3jp77-8081.app.github.dev/api';
+  static const String apiBaseUrl =
+      'https://mi-backend-production-a259.up.railway.app/api';
 
   // Database Name (si es necesario)
   static const String databaseName = 'rcas_db';
@@ -17,5 +18,3 @@ class AppConfig {
   // Token Key
   static const String tokenKey = 'rcas_token';
 }
-
-
