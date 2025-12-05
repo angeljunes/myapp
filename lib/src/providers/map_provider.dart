@@ -81,18 +81,36 @@ class MapProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Intentar obtener la última ubicación conocida primero para mostrar algo rápido
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) {
+        _currentPosition = LatLng(lastKnown.latitude, lastKnown.longitude);
+        if (_mapController != null) {
+          _mapController!.move(_currentPosition, 15.0);
+        }
+        notifyListeners();
+      }
+
+      // Obtener la ubicación actual con la mejor precisión posible
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.best,
+        forceAndroidLocationManager: true, // Ayuda en algunos dispositivos Android
+        timeLimit: const Duration(seconds: 10), // Evitar espera infinita
       );
 
       _currentPosition = LatLng(position.latitude, position.longitude);
       
       // Move map to current location if controller is available
       if (_mapController != null) {
-        _mapController!.move(_currentPosition, 15.0);
+        _mapController!.move(_currentPosition, 18.0); // Zoom más cercano para mejor precisión
       }
     } catch (e) {
-      _locationError = 'Error al obtener ubicación: $e';
+      // Si falla getCurrentPosition, ya mostramos lastKnown si existía.
+      // Si no, mostramos el error.
+      if (_currentPosition.latitude == -12.0464 && _currentPosition.longitude == -77.0428) {
+         _locationError = 'No se pudo obtener la ubicación exacta. Verifica tu GPS.';
+      }
+      print('Error obteniendo ubicación: $e');
     } finally {
       _locationLoading = false;
       notifyListeners();
